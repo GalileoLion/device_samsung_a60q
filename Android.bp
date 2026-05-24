@@ -1,0 +1,15 @@
+//
+// Copyright (C) 2026 The LineageOS Project
+//
+// SPDX-License-Identifier: Apache-2.0
+//
+
+soong_namespace {
+}
+
+prebuilt_etc {
+    name: "init.a60q.rc",
+    src: "init/init.a60q.rc",
+    vendor: true,
+    relative_install_path: "init",
+}

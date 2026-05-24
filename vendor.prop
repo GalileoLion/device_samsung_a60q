@@ -1,0 +1,5 @@
+# Bluetooth
+bluetooth.device.default_name=Galaxy A60
+
+# Fingerprint
+# A60 uses rear-mounted fingerprint. Do not inherit A70 UDFPS coordinates.

@@ -1,0 +1,4 @@
+# Proprietary files - Samsung Galaxy A60
+#
+# TODO: Generate from A60 stock firmware/vendor image.
+# Use a70q-lineage proprietary-files.txt only as a reference for categories.

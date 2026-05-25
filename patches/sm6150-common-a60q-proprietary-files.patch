@@ -1,0 +1,55 @@
+diff --git a/proprietary-files.txt b/proprietary-files.txt
+index f9a0692..ef6757c 100755
+--- a/proprietary-files.txt
++++ b/proprietary-files.txt
+@@ -43,7 +43,7 @@ vendor/etc/dolby/dax-default.xml
+ vendor/lib/hw/audio.primary.sm6150.so
+ vendor/lib/hw/vendor.qti.hardware.bluetooth_audio@2.0-impl.so
+ vendor/lib/btaudio_offload_if.so
+-vendor/lib/lib_SamsungRec_07002.so
++vendor/lib/lib_SamsungRec_07001.so
+ vendor/lib/lib_SoundAlive_3DPosition_ver202.so
+ vendor/lib/lib_SoundAlive_AlbumArt_ver105.so
+ vendor/lib/lib_SoundAlive_SRC384_ver320.so
+@@ -158,13 +158,6 @@ vendor/lib/camera/components/libdepthmapwrapper.so
+ vendor/lib/camera/components/libmmcamera_cac3.so
+ vendor/lib/camera/com.samsung.sensor.gc5035.so
+ vendor/lib/camera/com.samsung.sensor.s5k4ha.so
+-vendor/lib/camera/com.samsung.sensor.s5kgd1_front.so
+-vendor/lib/camera/com.samsung.sensormodule.1_lsi_s5kgd1_front_dv.bin
+-vendor/lib/camera/com.samsung.sensormodule.1_lsi_s5kgd1_front_pv_NEW.bin
+-vendor/lib/camera/com.samsung.sensormodule.1_lsi_s5kgd1_front_pv_OLD.bin
+-vendor/lib/camera/com.samsung.sensormodule.8_lsi_s5kgd1_front_full_dv.bin
+-vendor/lib/camera/com.samsung.sensormodule.8_lsi_s5kgd1_front_full_pv_NEW.bin
+-vendor/lib/camera/com.samsung.sensormodule.8_lsi_s5kgd1_front_full_pv_OLD.bin
+ vendor/lib/camera/f_dual_calibration.bin
+ vendor/lib/camera/uw_dual_calibration.bin
+ vendor/lib/camera/w_dual_calibration.bin
+@@ -224,7 +217,6 @@ vendor/lib64/camera/components/libdepthmapwrapper.so
+ vendor/lib64/camera/components/libmmcamera_cac3.so
+ vendor/lib64/camera/com.samsung.sensor.gc5035.so
+ vendor/lib64/camera/com.samsung.sensor.s5k4ha.so
+-vendor/lib64/camera/com.samsung.sensor.s5kgd1_front.so
+ vendor/lib64/libBeauty_v4.camera.samsung.so
+ vendor/lib64/libDLInterface.camera.samsung.so
+ vendor/lib64/libDualCamBokehCapture.camera.samsung.so
+@@ -713,10 +705,7 @@ vendor/etc/locale/plmn_delta_zh-rCN.bin
+ vendor/etc/locale/plmn_delta_zh-rHK.bin
+ vendor/etc/locale/plmn_delta_zh-rTW.bin
+ vendor/etc/mtu-conf.xml
+-vendor/etc/plmn_delta.bin
+-vendor/etc/plmn_delta_attaio.bin
+ vendor/etc/plmn_delta_hktw.bin
+-vendor/etc/plmn_delta_usagsm.bin
+ vendor/etc/plmn_se13.bin
+ vendor/etc/sec_config_oem
+ vendor/lib/libconfigdb.so
+@@ -789,8 +778,6 @@ vendor/etc/sensors/config/sns_tilt_sw_disabled.json
+ vendor/etc/sensors/config/sns_tilt_sw_enabled.json
+ vendor/etc/sensors/config/talos_lsm6dsm_0.json
+ vendor/etc/sensors/config/talos_power_0.json
+-vendor/etc/sensors/config/talos_stk3x3x_0.json
+-vendor/etc/sensors/config/talos_tcs3407_0.json
+ vendor/etc/sensors/sns_reg_config
+ vendor/lib/libsensorlistener.so
+ vendor/lib/libsensorndkbridge.so

@@ -25,9 +25,13 @@
 - 已建立初始 `proprietary-files.txt`，包含已从 A60 vendor 镜像核实存在的相机、后置指纹、音频路径和设备固件 blobs。
 - 已把本工作区移动到 `/run/media/kelon/三星固件/SM-A6060/a6060_device_tree`，和固件包放在同一分区下。
 - 已完成 TGY vendor 镜像对 A60 单设备 proprietary list 的第一轮存在性校验：当前 50 个 A60 单设备路径全部存在。
-- 已完成 TGY vendor 镜像对 SM6150 common vendor 路径的第一轮存在性校验：755 个存在，4 个缺失，缺失项已记录。
-- 已完成 TGY `system.img` / `product.img` 对 13 个 common 非 vendor 路径的来源确认：13 个全部存在于 TGY `system.img`，`product.img` 未提供这些项。
-- TGY 文件存在性检查已经收敛：A60 单设备清单无缺失，common 非 vendor 无缺失，剩余问题是 4 个 SM6150 common vendor 缺失项需要在 common/vendor 仓库侧处理。
+- 已搭建轻量 Lineage workspace：`lineage_workspace/`，没有同步完整 Lineage 源码。
+- 已拉取必要小仓库到轻量 workspace：`device/samsung/sm6150-common` 和 `tools/extract-utils`。
+- 已把 TGY 固件解包为 extract-utils 可读取的 source 目录：`firmware/TGY_A6060ZHU3CXE1_extracted`。
+- 已将 A60 抽取脚本升级到 `lineage-22.2` 使用的 Python extract-utils 风格，并保留 shell wrapper。
+- 已用 TGY source 成功抽取 A60 单设备 vendor：`vendor/samsung/a60q`，50 个 blobs。
+- 已用本地 A60 化 common 清单成功抽取 `vendor/samsung/sm6150-common`，782 个 blobs。
+- 已生成 `patches/sm6150-common-a60q-proprietary-files.patch`，记录 A60 需要落到 common 仓库的 proprietary list 调整。
 
 当前还没有开始完整 Lineage 源码环境内的 `lunch` / `mka bootimage` / `mka recoveryimage` 构建验证。
 
@@ -35,8 +39,9 @@
 
 - 先按 TGY `A6060ZHU3CXE1` 做完设备树和 vendor blobs 主线。
 - 暂缓 CHC/TGY 差异对比，不让 CHC 阻塞当前 TGY bring-up。
-- 处理 TGY 与 SM6150 common proprietary list 的 4 个 vendor 缺失项。
-- 在完整 Lineage 源码树中抽取 vendor blobs，验证 `vendor/samsung/a60q` 生成结果。
+- 将 `patches/sm6150-common-a60q-proprietary-files.patch` 落到真正的 `device/samsung/sm6150-common` 仓库或 A60 专用 common 分支。
+- 将轻量 workspace 中生成的 `vendor/samsung/a60q` 独立成 vendor 仓库。
+- 将轻量 workspace 中生成的 `vendor/samsung/sm6150-common` 与 common vendor 仓库对齐。
 - 准备 `a60q_defconfig` / 内核差异对照，然后开始 `bootimage` 和 `recoveryimage` 构建。
 
 ## 基本原则
@@ -396,11 +401,62 @@ CHC 仍未提取：
 
 尚未完成：
 
-- 还没有处理 SM6150 common proprietary list 中 TGY vendor 缺失的 4 个条目。
-- 还没有生成实际 `vendor/samsung/a60q` 仓库。
-- 还没有在完整 Lineage 源码树中执行 `extract-files.sh`。
+- 还没有把生成的 `vendor/samsung/a60q` 发布为独立 vendor 仓库。
+- 还没有把 A60 化 common proprietary list 补丁合入 `device/samsung/sm6150-common`。
+- 还没有把生成的 `vendor/samsung/sm6150-common` 与 common vendor 仓库对齐。
 - 还没有决定同名但与 common 有差异的音频 XML 是否需要设备侧覆盖。
 - 还没有开始 `bootimage` / `recoveryimage` 构建验证。
+
+### 轻量 Lineage workspace
+
+为避免同步完整 Lineage 源码，当前只在本仓库下建立了轻量 workspace：
+
+```text
+lineage_workspace/
+```
+
+该目录已由 `.gitignore` 排除，不提交到设备树仓库。
+
+当前包含：
+
+- `device/samsung/a60q`：指向当前设备树的符号链接。
+- `device/samsung/sm6150-common`：从 `a70q-lineage/android_device_samsung_sm6150-common` 的 `lineage-22.2` 分支浅克隆。
+- `tools/extract-utils`：从 LineageOS `android_tools_extract-utils` 的 `lineage-22.2` 分支浅克隆。
+- `prebuilts/`：只放了 `extract-utils` 本次需要的 `patchelf` / `llvm-objdump` / `llvm-strip` 本机工具符号链接，不是完整 Lineage prebuilts。
+- `vendor/samsung/a60q`：已从 TGY source 成功生成，50 个 blobs。
+- `vendor/samsung/sm6150-common`：已在本地 A60 化 common 清单后成功生成，782 个 blobs。
+
+TGY source 目录：
+
+```text
+firmware/TGY_A6060ZHU3CXE1_extracted
+```
+
+该目录也已由 `.gitignore` 排除，不提交到设备树仓库。
+
+当前 source 内容：
+
+- `vendor/`：从 TGY `vendor.raw.img` 完整导出。
+- `product/`：从 TGY `product.img` 导出。
+- `system/`、`system_ext/`、`bin/`、`lib64/`：按 common 清单需要导出的 system 侧文件。
+
+已验证命令：
+
+```bash
+PYTHONPATH=/home/kelon/MakeFun/a6060_device_tree/lineage_workspace/tools/extract-utils \
+python3 ./extract-files.py /home/kelon/MakeFun/a6060_device_tree/firmware/TGY_A6060ZHU3CXE1_extracted
+```
+
+执行位置：
+
+```text
+lineage_workspace/device/samsung/a60q
+```
+
+结果：
+
+- A60 单设备 vendor 抽取成功。
+- SM6150 common vendor 在套用 `patches/sm6150-common-a60q-proprietary-files.patch` 后抽取成功。
 
 ### TGY proprietary list 覆盖检查
 
@@ -412,7 +468,7 @@ A60 单设备清单：
 - 50 个路径全部存在于 TGY `vendor.raw.img`。
 - 当前没有 A60 单设备清单缺失项。
 
-SM6150 common 清单：
+SM6150 common 清单历史检查：
 
 - common `proprietary-files.txt` 当前共有 772 个有效路径。
 - 其中 755 个 `vendor/` 路径存在于 TGY `vendor.raw.img`。
@@ -457,14 +513,18 @@ system_ext/lib/vendor.qti.hardware.qdutils_disp@1.0.so
 system_ext/lib64/vendor.qti.hardware.qdutils_disp@1.0.so
 ```
 
-当前判断：
+当前 common 抽取验证结论：
 
-- TGY 文件存在性检查已经完成。
-- A60 单设备 `proprietary-files.txt` 当前没有缺失项。
-- SM6150 common 的 13 个非 vendor 项在 TGY `system.img` 中全部存在。
-- 仍需处理的是 SM6150 common vendor 清单中的 4 个 TGY 缺失项。
+- A60 单设备 `proprietary-files.txt` 当前没有缺失项，已成功生成 `vendor/samsung/a60q`。
+- 当前 `lineage-22.2` 的 `sm6150-common` 原始清单不能直接用于 A60 TGY。
+- 原始 common 清单缺失项实际包括 A70 前摄、A70 光/距离传感器和部分区域 plmn 文件，不只是早期旧报告记录的 4 个。
+- 本地验证通过的处理方式已经记录为 `patches/sm6150-common-a60q-proprietary-files.patch`：
+  - `vendor/lib/lib_SamsungRec_07002.so` 替换为 TGY 存在的 `vendor/lib/lib_SamsungRec_07001.so`。
+  - 删除 TGY 不存在的 `plmn_delta.bin`、`plmn_delta_attaio.bin`、`plmn_delta_usagsm.bin`，保留 `plmn_delta_hktw.bin` 和 locale plmn 文件。
+  - 删除 A70 前摄 `s5kgd1_front` 相关条目；A60 相机 sensor/tuning 已在 A60 单设备清单中处理。
+  - 删除 TGY 不存在的 `talos_stk3x3x_0.json` 和 `talos_tcs3407_0.json`。
+- 套用上述补丁后，SM6150 common vendor 已从 TGY source 成功生成。
 - 临时转换出的 `system.img` / `product.img` 大镜像已经清理，不保留在仓库工作区。
-- 下一步应先处理 common vendor 缺失 4 项，再生成实际 vendor tree。
 
 ## 构建顺序
 
@@ -830,13 +890,9 @@ TWRP 里的 prebuilt `Image.gz-dtb` 和 `dtbo.img` 可用于对比。
 
 继续按 TGY 路线推进：
 
-- 处理 TGY vendor 中缺失的 4 个 common vendor 项：
-  - `vendor/lib/lib_SamsungRec_07002.so`
-  - `vendor/etc/plmn_delta.bin`
-  - `vendor/etc/plmn_delta_attaio.bin`
-  - `vendor/etc/plmn_delta_usagsm.bin`
-- 根据确认结果更新 common/A60 proprietary list 处理策略。
-- 生成并检查 `vendor/samsung/a60q`。
+- 将 `patches/sm6150-common-a60q-proprietary-files.patch` 应用到真正使用的 `device/samsung/sm6150-common` 仓库或 A60 专用 common 分支。
+- 将 `lineage_workspace/vendor/samsung/a60q` 独立成 `proprietary_vendor_samsung_a60q` 仓库。
+- 将 `lineage_workspace/vendor/samsung/sm6150-common` 与 common vendor 仓库对齐。
 - 放进完整 Lineage 源码树后执行 `lunch lineage_a60q-userdebug`、`mka bootimage`、`mka recoveryimage`。
 
 每个设备专有值都需要和以下来源交叉核对：

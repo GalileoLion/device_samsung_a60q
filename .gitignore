@@ -2,6 +2,8 @@ firmware_analysis/
 firmware/
 compare_extract/
 compare_reports/
+lineage_workspace/
 tools/
 .venv/
 .venv311/
+__pycache__/

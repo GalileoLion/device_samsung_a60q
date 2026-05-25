@@ -12,6 +12,9 @@ Current status:
 - Non-dynamic partition layout verified from A60 PIT
 - Initial A60 recovery/vendor fstab added
 - Initial A60-specific proprietary blob list added
+- TGY source dump prepared locally for extract-utils
+- A60 vendor blobs have been extracted successfully in the lightweight workspace
+- SM6150 common vendor blobs extract successfully after applying the A60 common proprietary-list patch in `patches/`
 - Full Lineage build validation has not been run yet
 
 See `PLAN.md` for the bring-up plan and known risk areas.

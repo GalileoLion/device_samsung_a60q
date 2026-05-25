@@ -6,5 +6,13 @@
   {
     "repository": "android_kernel_samsung_sm6150",
     "target_path": "kernel/samsung/sm6150"
+  },
+  {
+    "repository": "proprietary_vendor_samsung_a60q",
+    "target_path": "vendor/samsung/a60q"
+  },
+  {
+    "repository": "proprietary_vendor_samsung_sm6150-common",
+    "target_path": "vendor/samsung/sm6150-common"
   }
 ]

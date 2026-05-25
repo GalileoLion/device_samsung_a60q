@@ -10,8 +10,7 @@ set -e
 DEVICE=a60q
 VENDOR=samsung
 
-COMMON_DEVICE=sm6150-common
-COMMON_VENDOR=samsung
+DEVICE_COMMON=sm6150-common
 
 set -o pipefail
 
@@ -35,8 +34,8 @@ function blob_fixup() {
     esac
 }
 
-if [[ -f "${LINEAGE_ROOT}/device/${VENDOR}/${COMMON_DEVICE}/extract-files.sh" ]]; then
-    "${LINEAGE_ROOT}/device/${VENDOR}/${COMMON_DEVICE}/extract-files.sh" "$@"
+if [[ -f "${LINEAGE_ROOT}/device/${VENDOR}/${DEVICE_COMMON}/extract-files.sh" ]]; then
+    "${LINEAGE_ROOT}/device/${VENDOR}/${DEVICE_COMMON}/extract-files.sh" --only-common "$@"
 fi
 
 setup_vendor "${DEVICE}" "${VENDOR}" "${LINEAGE_ROOT}" false

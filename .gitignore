@@ -1,0 +1,5 @@
+firmware_analysis/
+firmware/
+tools/
+.venv/
+.venv311/

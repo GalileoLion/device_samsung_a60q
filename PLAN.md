@@ -1,3 +1,5 @@
+进度：A√选择 `lineage-22.2` 基线 -> B√建立 A60 设备树骨架 -> C√对照 TWRP 冲突点 -> D√上传 `lineage-22.2` 分支 -> E√提取 TGY stock 固件信息 -> F√完善 fstab/分区/BoardConfig -> G√准备初始 vendor blobs -> H 构建 boot/recovery -> I 首次启动与日志修复
+
 # 三星 Galaxy A60 设备树开发计划
 
 ## 目标
@@ -5,6 +7,32 @@
 为三星 Galaxy A60（`a60q`，SM-A6060）制作可用于 LineageOS 的设备树。
 
 基本思路是：在技术上确实相同的地方复用成熟的三星 A70（`a70q`）/ SM6150 生态；凡是 A60 自身硬件相关的配置，都必须从 A60 官方固件、已有 A60 TWRP 树、内核、dtb/dtbo 或真机 dump 中确认后再写入。
+
+## 当前状态
+
+当前设备树已经推进到初始 bring-up 阶段：
+
+- 已建立 `device/samsung/a60q` 的 LineageOS 设备树骨架。
+- 已切到 `lineage-22.2` 作为起始分支方向。
+- 已确认不以 TWRP 树作为 ROM 设备树主基础，只把它作为参数来源之一。
+- 已从 TGY `A6060ZHU3CXE1` 固件提取并核实 boot/recovery/dtbo/vbmeta/PIT/vendor。
+- 已写入 A60 的 `BOARD_NAME := RILRL28A003`。
+- 已按 A60 PIT 覆盖 boot/recovery/dtbo/system/vendor/cache 分区大小。
+- 已明确 `TARGET_USE_DYNAMIC_PARTITIONS := false`。
+- 已创建 A60 专用 `rootdir/vendor/etc/fstab.qcom`，并同时用于 recovery fstab 和 vendor 镜像复制。
+- 已修正 common 继承为 `device/samsung/sm6150-common/sm6150.mk`。
+- 已写入 TGY stock 构建指纹和 `PRIVATE_BUILD_DESC`。
+- 已建立初始 `proprietary-files.txt`，包含已从 A60 vendor 镜像核实存在的相机、后置指纹、音频路径和设备固件 blobs。
+- 已把本工作区移动到 `/run/media/kelon/三星固件/SM-A6060/a6060_device_tree`，和固件包放在同一分区下。
+
+当前还没有开始完整 Lineage 源码环境内的 `lunch` / `mka bootimage` / `mka recoveryimage` 构建验证。
+
+下一步重点：
+
+- 继续对比 CHC `A6060ZCS3CWE1` 与 TGY `A6060ZHU3CXE1` 的 PIT、boot、recovery、dtbo、vendor 差异。
+- 根据 CHC/TGY 对比结果决定最终 blob 主来源。
+- 在完整 Lineage 源码树中抽取 vendor blobs，验证 `vendor/samsung/a60q` 生成结果。
+- 准备 `a60q_defconfig` / 内核差异对照，然后开始 `bootimage` 和 `recoveryimage` 构建。
 
 ## 基本原则
 
@@ -128,6 +156,40 @@
 - TWRP 把 `/efs` 和 `/sec_efs` 都映射到 `sec_efs`；A70 common 分别挂载 `efs` 和 `sec_efs`。必须确认 A60 实际分区用途。
 - TWRP 的可移动存储路径有部分来自 A70，不应在未检查 A60 设备节点前信任。
 - TWRP recovery init 脚本对 recovery/decryption 有参考价值，但不能原样导入普通 vendor init。
+
+## A60 固件来源策略
+
+三星官方更新文档显示，`SM-A6060` 港版 TGY 和国行 CHC 的末期固件版本、补丁级别和更新性质不同：
+
+- TGY 官方更新页：`https://doc.samsungmobile.com/SM-A6060/TGY/doc.html`
+  - 最新记录为 `A6060ZHU3CXE1`
+  - 发布时间为 2024-06-03
+  - 安全补丁级别仍为 2023-05-01
+  - 更新内容是整体稳定性优化，不是新的安全补丁
+  - 上一个 TGY `A6060ZHS3CWE1` 才是 2023-05-01 安全补丁更新
+
+- CHC 官方更新页：`https://doc.samsungmobile.com/SM-A6060/CHC/doc.html`
+  - 最新记录为 `A6060ZCS3CWE1`
+  - 发布时间为 2023-06-05
+  - 安全补丁级别为 2023-03-01
+
+因此不能只因为 TGY 的版本号从 `W` 到 `X` 就默认它更适合作为设备树主来源。`CXE1` 更像 One UI 维护更新，是否影响 boot/dtbo/vendor 需要通过固件镜像 diff 确认。
+
+当前方向调整为：
+
+- 不预设唯一主提取源。
+- 同时准备 A60 TGY 最新固件和 A60 CHC 最新固件。
+- 先比较两者的 PIT、boot image、recovery image、dtbo、vendor image、stock fstab 和 vendor blobs。
+- 如果 TGY `CXE1` 相比 TGY `CWE1` / CHC `CWE1` 只改上层或区域内容，而底层硬件相关镜像无实质变化，则不因版本号优先使用 TGY。
+- 如果目标真机是国行硬件/国行销售版本，并且 CHC 与 TGY 的底层镜像存在差异，则以 CHC 作为设备树主依据。
+- 如果 CHC 与 TGY 的底层硬件相关部分一致，而 TGY vendor blobs 更新或更通用，则可以用 TGY 作为 blobs 主来源，同时保留 CHC 对照记录。
+- 三星 M40 最新 Android 11 固件作为第二对照源，用于同硬件近亲对照。
+
+使用原则：
+
+- 分区、fstab、boot header、dtbo、panel、touch、fingerprint、camera、audio 以实际镜像 diff 为准。
+- CSC、RIL、modem、区域 feature 不从 M40 直接继承。
+- M40 只能作为同平台/近似硬件参考，不能替代 A60 的设备身份、RIL、CSC 或 modem 相关配置。
 
 ## 初始实现方向
 
@@ -300,6 +362,181 @@ A70 音频配置只能作为参考。
 - `vbmeta_samsung`
 
 不要盲目使用 A70 分区大小。
+
+### TGY 固件已确认信息
+
+当前已从港版 TGY `A6060ZHU3CXE1` 固件提取并分析：
+
+- `boot.img`
+- `recovery.img`
+- `dtbo.img`
+- `vbmeta.img`
+- `A60Q_CHN_HK.pit`
+- `vendor.img.ext4`
+
+分析产物暂存在本地：
+
+```text
+firmware_analysis/TGY_A6060ZHU3CXE1
+```
+
+注意：这些是本地分析文件和大镜像，不应提交到设备树仓库。
+
+固件包和设备树工作区当前都保存在三星固件分区下；分析产物位于本地 `firmware_analysis/`，并通过 `.gitignore` 排除，不提交到设备树仓库。
+
+从 `boot.img` / `recovery.img` 已确认：
+
+- boot image header version：`1`
+- page size：`4096`
+- kernel offset：`0x00008000`
+- ramdisk offset：`0x02000000`
+- tags offset：`0x01e00000`
+- cmdline 与当前 SM6150 common 基本一致
+- product name / `BOARD_NAME`：`RILRL28A003`
+- boot security patch：`2023-05`
+- stock boot 无 ramdisk
+- recovery image 带 recovery dtbo
+
+从 `A60Q_CHN_HK.pit` 已确认的关键分区尺寸：
+
+| 分区 | 大小 |
+| --- | ---: |
+| `boot` | `67108864` |
+| `recovery` | `72744960` |
+| `dtbo` | `8388608` |
+| `system` | `5830082560` |
+| `vendor` | `1090519040` |
+| `product` | `536870912` |
+| `cache` | `629145600` |
+| `hidden` | `10485760` |
+| `omr` | `20971520` |
+| `persist` | `33554432` |
+| `efs` | `20971520` |
+| `sec_efs` | `20971520` |
+| `apnhlos` | `100663296` |
+| `modem` | `92274688` |
+| `dsp` | `37748736` |
+
+当前已在 A60 `BoardConfig.mk` 覆盖：
+
+- `BOARD_BOOTIMAGE_PARTITION_SIZE`
+- `BOARD_CACHEIMAGE_PARTITION_SIZE`
+- `BOARD_DTBOIMG_PARTITION_SIZE`
+- `BOARD_RECOVERYIMAGE_PARTITION_SIZE`
+- `BOARD_SYSTEMIMAGE_PARTITION_SIZE`
+- `BOARD_VENDORIMAGE_PARTITION_SIZE`
+
+仍需继续确认 `product` 在 Lineage 当前 common 组织下是否继续放进 `system/product`，还是要按 stock 独立 `product` 分区处理。
+
+从 `vendor` 中导出的 stock `fstab.qcom` 已确认：
+
+- `/data` 是 `ext4`，不是 A70 动态分区 fstab 里的 `f2fs`。
+- `persist` 挂载到 `/mnt/vendor/persist`。
+- `efs` 挂载到 `/mnt/vendor/efs`。
+- `sec_efs` 挂载到 `/efs`。
+- `apnhlos` 挂载到 `/vendor/firmware_mnt`。
+- `modem` 挂载到 `/vendor/firmware-modem`。
+- `dsp` 挂载到 `/vendor/dsp`。
+- 存在 `cache`、`carrier` 挂载项。
+- 外置 SD 节点为 `/devices/platform/soc/8804000.sdhci/mmc_host*`。
+- USB 存储节点为 `/devices/platform/soc/a600000.ssusb/a600000.dwc3/xhci-hcd.0.auto*`。
+
+当前已创建 A60 专用 recovery fstab：
+
+```text
+rootdir/vendor/etc/fstab.qcom
+```
+
+并在 `BoardConfig.mk` 中覆盖：
+
+```make
+TARGET_RECOVERY_FSTAB := $(DEVICE_PATH)/rootdir/vendor/etc/fstab.qcom
+```
+
+并在 `device.mk` 中复制到 vendor 镜像：
+
+```make
+$(DEVICE_PATH)/rootdir/vendor/etc/fstab.qcom:$(TARGET_COPY_OUT_VENDOR)/etc/fstab.qcom
+```
+
+这个 fstab 以 SM6150 common recovery fstab 的结构为基础，保留 recovery 构建需要的 `boot`、`recovery`、`system`、`vendor`、`vbmeta`、`metadata/omr` 入口，同时把 `/data`、`cache`、`efs`、`sec_efs`、firmware 挂载和 VOLD 节点按 A60 stock vendor fstab 修正。
+
+从 `vendor/build.prop` 已确认：
+
+- `ro.product.board=sm6150`
+- `ro.board.platform=sm6150`
+- `ro.vendor.build.fingerprint=samsung/a60qzh/a60q:11/RP1A.200720.012/A6060ZHU3CXE1:user/release-keys`
+- `ro.product.vendor.device=a60q`
+- `ro.product.vendor.model=SM-A6060`
+- `ro.product.vendor.name=a60qzh`
+- `ro.vendor.build.security_patch=2023-05-01`
+- `persist.vendor.radio.multisim.config=dsds`
+- `vendor.sec.rild.libpath=/vendor/lib64/libsec-ril.so`
+- `vendor.sec.rild.libpath2=/vendor/lib64/libsec-ril-dsds.so`
+- `ro.sf.lcd_density=420`
+
+当前已在 `lineage_a60q.mk` 写入 TGY 固件确认的构建指纹覆盖：
+
+- `BuildFingerprint=samsung/a60qzh/a60q:11/RP1A.200720.012/A6060ZHU3CXE1:user/release-keys`
+- `PRIVATE_BUILD_DESC="a60qzh-user 11 RP1A.200720.012 A6060ZHU3CXE1 release-keys"`
+- `DeviceProduct=a60qzh`
+- `SystemName=a60qzh`
+
+当前已修正 `device.mk` 的 common 继承目标：
+
+```make
+$(call inherit-product, device/samsung/sm6150-common/sm6150.mk)
+```
+
+原因是 A70/SM6150 common 仓库中的主产品 makefile 名称是 `sm6150.mk`，不是 `common.mk`。
+
+从 `vendor/default.prop` 已确认：
+
+- `ro.vndk.version=30`
+- `ro.vendor.multisim.simslotcount=2`
+- `ro.minui.pixel_format=RGBX_8888`
+
+从 vendor init / VINTF 已确认：
+
+- A60 stock 存在 Samsung 指纹 HAL：`vendor.samsung.hardware.biometrics.fingerprint@3.0-service`
+- 指纹服务 class 是 `late_start`，与需要等待 `/data` 的注释一致。
+- A60 stock 存在 USB HAL：`android.hardware.usb@1.1-service.wahoo`
+- VINTF 同时声明 AOSP `android.hardware.biometrics.fingerprint@2.1` 和 Samsung `vendor.samsung.hardware.biometrics.fingerprint@3.0`。
+
+### Vendor blobs 清单进展
+
+已开始准备 A60 单设备 `proprietary-files.txt`。
+
+当前只放入已经从 TGY `vendor.img` 核实、并且不适合直接沿用 A70 common 的设备专有项：
+
+- Samsung camera provider 服务
+- A60 相机 sensor module / tuning 文件：
+  - `gc5035`
+  - `s5k3p8sp`
+  - `s5k4ha`
+  - `s5kgd1`
+- A60 后置 Egis/Samsung 指纹 HAL
+- A60 相机 / 扬声器相关固件：
+  - `CAMERA_ICP.elf`
+  - `Tfa9xxx.cnt`
+  - `dax_param.bin`
+
+已验证 `proprietary-files.txt` 中当前每个路径都存在于 TGY `vendor.img`。
+
+已对 A60 stock 音频配置与 SM6150 common rootdir 做初步比对：
+
+- common rootdir 缺少 `mixer_paths_idp.xml`，已加入 A60 专有清单。
+- common rootdir 缺少 `SoundBoosterParam.txt`，已加入 A60 专有清单。
+- `audio_platform_info.xml` 与 common 一致。
+- `audio_platform_info_qrd.xml` 与 common 一致。
+- `media_profiles_vendor.xml` 与 common 一致。
+- `audio_platform_info_diff.xml` 与 common 有差异。
+- `audio_platform_info_intcodec.xml` 与 common 有差异。
+- `audio_policy_configuration.xml` 与 common 有差异。
+- `audio_policy_configuration_base.xml` 与 common 有差异。
+- `thermal-engine.conf` 在 common rootdir 中不存在，但 common proprietary list 已包含同名文件，不能直接在 A60 单设备清单里重复加入。
+
+下一步需要决定：对这些同名但有差异的音频配置，是继续暂用 common，还是在 common/设备树层面做 A60 条件化覆盖，避免 duplicate rule。
 
 ### 内核和 DTBO
 

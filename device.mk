@@ -18,12 +18,12 @@ TARGET_SCREEN_WIDTH := 1080
 PRODUCT_PACKAGES += \
     init.a60q.rc
 
-# TODO: Verify A60 audio mixer paths from stock vendor before enabling.
-# PRODUCT_COPY_FILES += \
-#     $(DEVICE_PATH)/audio/configs/mixer_paths_idp.xml:$(TARGET_COPY_OUT_VENDOR)/etc/mixer_paths_idp.xml
+# Fstab
+PRODUCT_COPY_FILES += \
+    $(DEVICE_PATH)/rootdir/vendor/etc/fstab.qcom:$(TARGET_COPY_OUT_VENDOR)/etc/fstab.qcom
 
 # Inherit from the common makefile
-$(call inherit-product, device/samsung/sm6150-common/common.mk)
+$(call inherit-product, device/samsung/sm6150-common/sm6150.mk)
 
 # Inherit from the proprietary files makefile
 $(call inherit-product, vendor/samsung/a60q/a60q-vendor.mk)

@@ -21,10 +21,10 @@ PRODUCT_BRAND := samsung
 PRODUCT_MODEL := SM-A6060
 PRODUCT_MANUFACTURER := samsung
 
-# TODO: Replace with verified A60 stock build properties.
-# Example values must come from the target firmware, not from A70.
 PRODUCT_BUILD_PROP_OVERRIDES += \
-    DeviceProduct=a60q \
-    SystemName=a60q
+    BuildFingerprint=samsung/a60qzh/a60q:11/RP1A.200720.012/A6060ZHU3CXE1:user/release-keys \
+    DeviceProduct=a60qzh \
+    PRIVATE_BUILD_DESC="a60qzh-user 11 RP1A.200720.012 A6060ZHU3CXE1 release-keys" \
+    SystemName=a60qzh
 
 PRODUCT_GMS_CLIENTID_BASE := android-samsung

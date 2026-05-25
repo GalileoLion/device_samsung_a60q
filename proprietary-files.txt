@@ -1,4 +1,64 @@
-# Proprietary files - Samsung Galaxy A60
+# Proprietary files - Samsung Galaxy A60 (a60q)
 #
-# TODO: Generate from A60 stock firmware/vendor image.
-# Use a70q-lineage proprietary-files.txt only as a reference for categories.
+# Initial device-specific list verified from TGY A6060ZHU3CXE1 vendor.img.
+# Keep common SM6150 blobs in device/samsung/sm6150-common.
+
+# Camera - Samsung provider
+vendor/bin/hw/vendor.samsung.hardware.camera.provider@4.0-service
+vendor/etc/init/vendor.samsung.hardware.camera.provider@4.0-service.rc
+vendor/lib64/hw/vendor.samsung.hardware.camera.provider@4.0-impl.so
+
+# Camera - A60 sensor modules and tuning
+vendor/lib/camera/com.samsung.sensor.gc5035.so
+vendor/lib/camera/com.samsung.sensor.s5k3p8sp.so
+vendor/lib/camera/com.samsung.sensor.s5k4ha.so
+vendor/lib/camera/com.samsung.sensor.s5kgd1.so
+vendor/lib/camera/com.samsung.sensormodule.0_lsi_s5kgd1_dv.bin
+vendor/lib/camera/com.samsung.sensormodule.0_lsi_s5kgd1_pv_NEW.bin
+vendor/lib/camera/com.samsung.sensormodule.0_lsi_s5kgd1_pv_OLD.bin
+vendor/lib/camera/com.samsung.sensormodule.1_lsi_s5k3p8sp.bin
+vendor/lib/camera/com.samsung.sensormodule.2_lsi_s5k4ha.bin
+vendor/lib/camera/com.samsung.sensormodule.3_lsi_gc5035.bin
+vendor/lib/camera/com.samsung.sensormodule.8_lsi_s5k3p8sp_full.bin
+vendor/lib/camera/com.samsung.tuned.gc5035.bin
+vendor/lib/camera/com.samsung.tuned.lsi_s5k3p8sp.bin
+vendor/lib/camera/com.samsung.tuned.s5k4ha.bin
+vendor/lib/camera/com.samsung.tuned.s5kgd1.bin
+vendor/lib/camera/f_dual_calibration.bin
+vendor/lib/camera/uw_dual_calibration.bin
+vendor/lib/camera/w_dual_calibration.bin
+vendor/lib64/camera/com.samsung.sensor.gc5035.so
+vendor/lib64/camera/com.samsung.sensor.s5k3p8sp.so
+vendor/lib64/camera/com.samsung.sensor.s5k4ha.so
+vendor/lib64/camera/com.samsung.sensor.s5kgd1.so
+vendor/lib64/camera/com.samsung.sensormodule.0_lsi_s5kgd1_dv.bin
+vendor/lib64/camera/com.samsung.sensormodule.0_lsi_s5kgd1_pv_NEW.bin
+vendor/lib64/camera/com.samsung.sensormodule.0_lsi_s5kgd1_pv_OLD.bin
+vendor/lib64/camera/com.samsung.sensormodule.1_lsi_s5k3p8sp.bin
+vendor/lib64/camera/com.samsung.sensormodule.2_lsi_s5k4ha.bin
+vendor/lib64/camera/com.samsung.sensormodule.3_lsi_gc5035.bin
+vendor/lib64/camera/com.samsung.sensormodule.8_lsi_s5k3p8sp_full.bin
+vendor/lib64/camera/com.samsung.tuned.gc5035.bin
+vendor/lib64/camera/com.samsung.tuned.lsi_s5k3p8sp.bin
+vendor/lib64/camera/com.samsung.tuned.s5k4ha.bin
+vendor/lib64/camera/com.samsung.tuned.s5kgd1.bin
+
+# Fingerprint - rear Egis/Samsung stack
+vendor/bin/hw/vendor.samsung.hardware.biometrics.fingerprint@3.0-service
+vendor/etc/init/vendor.samsung.hardware.biometrics.fingerprint@3.0-service.rc
+vendor/lib/hw/fingerprint.default.so
+vendor/lib/libegis_fp_normal_sensor_test.so
+vendor/lib/vendor.qti.hardware.fingerprint@1.0.so
+vendor/lib64/hw/fingerprint.default.so
+vendor/lib64/libegis_fp_normal_sensor_test.so
+vendor/lib64/vendor.qti.hardware.fingerprint@1.0.so
+vendor/lib64/vendor.samsung.hardware.biometrics.fingerprint@3.0.so
+
+# Audio - A60-specific paths and speaker tuning
+vendor/etc/mixer_paths_idp.xml
+vendor/etc/SoundBoosterParam.txt
+
+# Firmware - device-tuned camera / speaker firmware
+vendor/firmware/CAMERA_ICP.elf
+vendor/firmware/Tfa9xxx.cnt
+vendor/firmware/dax_param.bin

@@ -1,5 +1,7 @@
 firmware_analysis/
 firmware/
+compare_extract/
+compare_reports/
 tools/
 .venv/
 .venv311/

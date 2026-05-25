@@ -24,13 +24,18 @@
 - 已写入 TGY stock 构建指纹和 `PRIVATE_BUILD_DESC`。
 - 已建立初始 `proprietary-files.txt`，包含已从 A60 vendor 镜像核实存在的相机、后置指纹、音频路径和设备固件 blobs。
 - 已把本工作区移动到 `/run/media/kelon/三星固件/SM-A6060/a6060_device_tree`，和固件包放在同一分区下。
+- 已完成 TGY vendor 镜像对 A60 单设备 proprietary list 的第一轮存在性校验：当前 50 个 A60 单设备路径全部存在。
+- 已完成 TGY vendor 镜像对 SM6150 common vendor 路径的第一轮存在性校验：755 个存在，4 个缺失，缺失项已记录。
+- 已完成 TGY `system.img` / `product.img` 对 13 个 common 非 vendor 路径的来源确认：13 个全部存在于 TGY `system.img`，`product.img` 未提供这些项。
+- TGY 文件存在性检查已经收敛：A60 单设备清单无缺失，common 非 vendor 无缺失，剩余问题是 4 个 SM6150 common vendor 缺失项需要在 common/vendor 仓库侧处理。
 
 当前还没有开始完整 Lineage 源码环境内的 `lunch` / `mka bootimage` / `mka recoveryimage` 构建验证。
 
 下一步重点：
 
-- 继续对比 CHC `A6060ZCS3CWE1` 与 TGY `A6060ZHU3CXE1` 的 PIT、boot、recovery、dtbo、vendor 差异。
-- 根据 CHC/TGY 对比结果决定最终 blob 主来源。
+- 先按 TGY `A6060ZHU3CXE1` 做完设备树和 vendor blobs 主线。
+- 暂缓 CHC/TGY 差异对比，不让 CHC 阻塞当前 TGY bring-up。
+- 处理 TGY 与 SM6150 common proprietary list 的 4 个 vendor 缺失项。
 - 在完整 Lineage 源码树中抽取 vendor blobs，验证 `vendor/samsung/a60q` 生成结果。
 - 准备 `a60q_defconfig` / 内核差异对照，然后开始 `bootimage` 和 `recoveryimage` 构建。
 
@@ -177,19 +182,23 @@
 
 当前方向调整为：
 
-- 不预设唯一主提取源。
-- 同时准备 A60 TGY 最新固件和 A60 CHC 最新固件。
-- 先比较两者的 PIT、boot image、recovery image、dtbo、vendor image、stock fstab 和 vendor blobs。
-- 如果 TGY `CXE1` 相比 TGY `CWE1` / CHC `CWE1` 只改上层或区域内容，而底层硬件相关镜像无实质变化，则不因版本号优先使用 TGY。
-- 如果目标真机是国行硬件/国行销售版本，并且 CHC 与 TGY 的底层镜像存在差异，则以 CHC 作为设备树主依据。
-- 如果 CHC 与 TGY 的底层硬件相关部分一致，而 TGY vendor blobs 更新或更通用，则可以用 TGY 作为 blobs 主来源，同时保留 CHC 对照记录。
-- 三星 M40 最新 Android 11 固件作为第二对照源，用于同硬件近亲对照。
+- 先以 TGY `A6060ZHU3CXE1` 作为当前主提取源，把 TGY 路线做完。
+- CHC `A6060ZCS3CWE1` 已准备好，但暂时只作为后续复核来源，不阻塞当前工作。
+- 暂缓 PIT、boot image、recovery image、dtbo、vendor image、stock fstab 和 vendor blobs 的 CHC/TGY 系统性 diff。
+- TGY 完成后，再回头用 CHC 验证区域差异、底层镜像差异和 blob 是否需要替换。
+- 三星 M40 最新 Android 11 固件仍作为第二对照源，用于同硬件近亲对照。
 
 使用原则：
 
 - 分区、fstab、boot header、dtbo、panel、touch、fingerprint、camera、audio 以实际镜像 diff 为准。
 - CSC、RIL、modem、区域 feature 不从 M40 直接继承。
 - M40 只能作为同平台/近似硬件参考，不能替代 A60 的设备身份、RIL、CSC 或 modem 相关配置。
+
+当前阶段补充原则：
+
+- TGY 未做完前，不再被 CHC 对比打断。
+- 任何进入 `proprietary-files.txt` 的路径，先以 TGY 镜像存在性为最低验证标准。
+- TGY 中不存在、但 common 清单要求的文件，必须明确记录，不静默沿用 A70 假设。
 
 ## 初始实现方向
 
@@ -227,6 +236,235 @@ $(call inherit-product, device/samsung/sm6150-common/common.mk)
 
 - A60 recovery pixel format：`TARGET_RECOVERY_PIXEL_FORMAT := RGBX_8888`
 - A70/common UDFPS 相关配置，避免屏下指纹逻辑泄漏到 A60
+
+## 文件提取情况
+
+### 固件包存放状态
+
+当前固件包和设备树工作区位于三星固件分区：
+
+```text
+/run/media/kelon/三星固件/SM-A6060
+```
+
+TGY 固件目录：
+
+```text
+/run/media/kelon/三星固件/SM-A6060/TGY/A6060ZHU3CXE1
+```
+
+已存在文件：
+
+- `AP_A6060ZHU3CXE1_CL22624812_QB80341403_REV00_user_low_ship_MULTI_CERT_meta_OS11.tar.md5`
+- `BL_A6060ZHU3CXE1_CL22624812_QB80341403_REV00_user_low_ship_MULTI_CERT.tar.md5`
+- `CP_A6060ZHU3CXE1_CP26490412_CL22624812_QB80341403_REV00_user_low_ship_MULTI_CERT.tar.md5`
+- `CSC_OMC_TGY_A6060TGY3CXE1_CL22624812_QB80341403_REV00_user_low_ship_MULTI_CERT.tar.md5`
+- `HOME_CSC_OMC_TGY_A6060TGY3CXE1_CL22624812_QB80341403_REV00_user_low_ship_MULTI_CERT.tar.md5`
+- `FirmwareInfo.txt`
+
+CHC 固件目录：
+
+```text
+/run/media/kelon/三星固件/SM-A6060/CHC/SM-A6060_3_20230526181531_j550velxsy_fac
+```
+
+已存在文件：
+
+- `AP_A6060ZCS3CWE1_CL22624782_QB65535723_REV00_user_low_ship_MULTI_CERT_meta_OS11.tar.md5`
+- `BL_A6060ZCS3CWE1_CL22624782_QB65535723_REV00_user_low_ship_MULTI_CERT.tar.md5`
+- `CP_A6060ZCS3CWE1_CP24263126_CL22624782_QB65535723_REV00_user_low_ship_MULTI_CERT.tar.md5`
+- `CSC_OMC_CHC_A6060CHC3CWE1_CL22624782_QB65535723_REV00_user_low_ship_MULTI_CERT.tar.md5`
+- `HOME_CSC_OMC_CHC_A6060CHC3CWE1_CL22624782_QB65535723_REV00_user_low_ship_MULTI_CERT.tar.md5`
+
+CHC 原始包：
+
+```text
+/run/media/kelon/三星固件/SM-A6060/CHC/SM-A6060_3_20230526181531_j550velxsy_fac.zip
+/run/media/kelon/三星固件/SM-A6060/CHC/SM-A6060_3_20230526181531_j550velxsy_fac.zip.enc4
+```
+
+已验证：
+
+- CHC `.zip` 通过 `unzip -t`。
+- CHC 解压出的五个 `.tar.md5` 均通过 `tar -tf` 可读性检查。
+
+### TGY 已提取内容
+
+本地分析目录：
+
+```text
+firmware_analysis/TGY_A6060ZHU3CXE1
+```
+
+已提取镜像：
+
+| 文件 | 状态 |
+| --- | --- |
+| `A60Q_CHN_HK.pit` | 已提取 |
+| `boot.img` | 已提取 |
+| `recovery.img` | 已提取 |
+| `dtbo.img` | 已提取 |
+| `vbmeta.img` | 已提取 |
+| `vendor.img.ext4` | 已提取，Android sparse image |
+| `vendor.raw.img` | 已由 `simg2img` 转换 |
+
+已解包 boot/recovery：
+
+| 目录 | 内容 |
+| --- | --- |
+| `unpacked_boot/` | `kernel`、空 `ramdisk` |
+| `unpacked_recovery/` | `kernel`、`ramdisk`、`recovery_dtbo` |
+
+已从 TGY vendor raw image 导出文本配置：
+
+| 文件 | 用途 |
+| --- | --- |
+| `vendor_text/fstab.qcom` | 确认挂载点、文件系统、VOLD 节点 |
+| `vendor_text/build.prop` | 确认 vendor fingerprint、产品名、RIL、LCD density |
+| `vendor_text/default.prop` | 确认 VNDK、SIM 数、minui pixel format |
+| `vendor_text/fingerprint.rc` | 确认 Samsung 指纹 HAL 启动方式 |
+| `vendor_text/usb.rc` | 确认 USB HAL 和 type-c sysfs 权限 |
+| `vendor_text/manifest.xml` | 确认 AOSP/Samsung HAL 声明 |
+
+已从 TGY vendor raw image 额外导出音频/性能配置用于和 common 对比：
+
+- `vendor_text/audio/mixer_paths_idp.xml`
+- `vendor_text/audio/SoundBoosterParam.txt`
+- `vendor_text/audio/audio_platform_info.xml`
+- `vendor_text/audio/audio_platform_info_diff.xml`
+- `vendor_text/audio/audio_platform_info_intcodec.xml`
+- `vendor_text/audio/audio_platform_info_qrd.xml`
+- `vendor_text/audio/audio_policy_configuration.xml`
+- `vendor_text/audio/audio_policy_configuration_base.xml`
+- `vendor_text/audio/media_profiles_vendor.xml`
+- `vendor_text/audio/powerhint.xml`
+- `vendor_text/audio/thermal-engine.conf`
+
+### CHC 已提取内容
+
+本地分析目录：
+
+```text
+firmware_analysis/CHC_A6060ZCS3CWE1
+```
+
+当前只完成了第一步提取：
+
+| 文件 | 状态 |
+| --- | --- |
+| `boot.img` | 已提取 |
+| `unpacked_boot/kernel` | 已解包 |
+| `unpacked_boot/ramdisk` | 已解包，大小为 0 |
+
+已确认 CHC boot image：
+
+- boot image header version：`1`。
+- page size：`4096`。
+- product name / `BOARD_NAME`：`RILRL28A003`。
+- cmdline 与 TGY 基本一致。
+- os patch level：`2023-03`。
+- kernel 与 TGY 不同，大小和 hash 均不同。
+
+CHC 仍未提取：
+
+- `A60Q_CHN_OPEN.pit`
+- `recovery.img`
+- `dtbo.img`
+- `vbmeta.img`
+- `vendor.img.ext4`
+- `vendor.raw.img`
+- CHC vendor text configs
+
+### 当前 proprietary-files.txt 状态
+
+当前 `proprietary-files.txt` 是初始 A60 单设备 blobs 清单，来源依据为 TGY `vendor.img`。
+
+已纳入类别：
+
+- Samsung camera provider。
+- A60 camera sensor module / tuning。
+- 后置 Egis/Samsung 指纹 HAL。
+- A60 专用音频路径和扬声器调校：
+  - `vendor/etc/mixer_paths_idp.xml`
+  - `vendor/etc/SoundBoosterParam.txt`
+- 设备调校固件：
+  - `vendor/firmware/CAMERA_ICP.elf`
+  - `vendor/firmware/Tfa9xxx.cnt`
+  - `vendor/firmware/dax_param.bin`
+
+已验证：当前清单中的路径均存在于 TGY `vendor.raw.img`。
+
+尚未完成：
+
+- 还没有处理 SM6150 common proprietary list 中 TGY vendor 缺失的 4 个条目。
+- 还没有生成实际 `vendor/samsung/a60q` 仓库。
+- 还没有在完整 Lineage 源码树中执行 `extract-files.sh`。
+- 还没有决定同名但与 common 有差异的音频 XML 是否需要设备侧覆盖。
+- 还没有开始 `bootimage` / `recoveryimage` 构建验证。
+
+### TGY proprietary list 覆盖检查
+
+已用 TGY `vendor.raw.img` 对当前清单做存在性检查。
+
+A60 单设备清单：
+
+- `proprietary-files.txt` 当前共有 50 个有效路径。
+- 50 个路径全部存在于 TGY `vendor.raw.img`。
+- 当前没有 A60 单设备清单缺失项。
+
+SM6150 common 清单：
+
+- common `proprietary-files.txt` 当前共有 772 个有效路径。
+- 其中 755 个 `vendor/` 路径存在于 TGY `vendor.raw.img`。
+- 其中 4 个 `vendor/` 路径在 TGY `vendor.raw.img` 中缺失。
+- 其中 13 个非 `vendor/` 路径已经从 TGY `system.img` / `product.img` 确认完毕。
+- 13 个非 `vendor/` 路径全部存在于 TGY `system.img`。
+- TGY `product.img` 没有提供这些 common 非 `vendor/` 路径。
+
+TGY vendor 中缺失的 common vendor 项：
+
+```text
+vendor/lib/lib_SamsungRec_07002.so
+vendor/etc/plmn_delta.bin
+vendor/etc/plmn_delta_attaio.bin
+vendor/etc/plmn_delta_usagsm.bin
+```
+
+已观察到 TGY vendor 中存在相近但不同的文件：
+
+```text
+vendor/lib/lib_SamsungRec_07001.so
+vendor/etc/plmn_delta_hktw.bin
+```
+
+这些差异不能直接猜测替换规则，后续需要确认 common 是否应该条件化，或 A60 是否需要单设备覆盖/排除。
+
+已从 TGY `system.img` 确认存在的 common 非 vendor 项：
+
+```text
+system_ext/etc/permissions/audiosphere.xml
+system_ext/framework/audiosphere.jar
+system_ext/lib/fm_helium.so
+system_ext/lib/libfm-hci.so
+system_ext/lib/vendor.qti.hardware.fm@1.0.so
+system_ext/lib64/fm_helium.so
+system_ext/lib64/libfm-hci.so
+system_ext/lib64/vendor.qti.hardware.fm@1.0.so
+bin/lpm
+lib64/libmaet.so
+lib64/libsxqk_skia.so
+system_ext/lib/vendor.qti.hardware.qdutils_disp@1.0.so
+system_ext/lib64/vendor.qti.hardware.qdutils_disp@1.0.so
+```
+
+当前判断：
+
+- TGY 文件存在性检查已经完成。
+- A60 单设备 `proprietary-files.txt` 当前没有缺失项。
+- SM6150 common 的 13 个非 vendor 项在 TGY `system.img` 中全部存在。
+- 仍需处理的是 SM6150 common vendor 清单中的 4 个 TGY 缺失项。
+- 临时转换出的 `system.img` / `product.img` 大镜像已经清理，不保留在仓库工作区。
+- 下一步应先处理 common vendor 缺失 4 项，再生成实际 vendor tree。
 
 ## 构建顺序
 
@@ -590,16 +828,16 @@ TWRP 里的 prebuilt `Image.gz-dtb` 和 `dtbo.img` 可用于对比。
 
 ## 下一步
 
-继续从 A60 stock 固件提取和确认：
+继续按 TGY 路线推进：
 
-- PIT / 分区表
-- stock fstab
-- `boot.img`
-- `recovery.img`
-- `dtbo.img`
-- `vendor.img`
-- kernel / dtb / dtbo 差异
-- vendor blobs 清单
+- 处理 TGY vendor 中缺失的 4 个 common vendor 项：
+  - `vendor/lib/lib_SamsungRec_07002.so`
+  - `vendor/etc/plmn_delta.bin`
+  - `vendor/etc/plmn_delta_attaio.bin`
+  - `vendor/etc/plmn_delta_usagsm.bin`
+- 根据确认结果更新 common/A60 proprietary list 处理策略。
+- 生成并检查 `vendor/samsung/a60q`。
+- 放进完整 Lineage 源码树后执行 `lunch lineage_a60q-userdebug`、`mka bootimage`、`mka recoveryimage`。
 
 每个设备专有值都需要和以下来源交叉核对：
 

@@ -1,4 +1,4 @@
-进度：A√选择 `lineage-22.2` 基线 -> B√建立 A60 设备树骨架 -> C√对照 TWRP 冲突点 -> D√上传 `lineage-22.2` 分支 -> E√提取 TGY stock 固件信息 -> F√完善 fstab/分区/BoardConfig -> G√准备初始 vendor blobs -> H 构建 boot/recovery -> I 首次启动与日志修复
+进度：A√选择 `lineage-22.2` 基线 -> B√建立 A60 设备树骨架 -> C√对照 TWRP 冲突点 -> D√上传设备树分支 -> E√提取 TGY stock 固件信息 -> F√完善 fstab/分区/BoardConfig -> G√抽取 vendor blobs -> H√上传完整依赖仓库 -> I 内核真适配 -> J 构建 boot/recovery -> K 首次启动与日志修复
 
 # 三星 Galaxy A60 设备树开发计划
 
@@ -32,17 +32,17 @@
 - 已用 TGY source 成功抽取 A60 单设备 vendor：`vendor/samsung/a60q`，50 个 blobs。
 - 已用本地 A60 化 common 清单成功抽取 `vendor/samsung/sm6150-common`，782 个 blobs。
 - 已生成 `patches/sm6150-common-a60q-proprietary-files.patch`，记录 A60 需要落到 common 仓库的 proprietary list 调整。
+- 已将当前设备树和所需依赖仓库上传到 GitHub，并核验远端 `lineage-22.2` 分支存在。
+- 已在 kernel 仓库中加入初始 `a60q_defconfig`；当前只是从 A70 defconfig 机械派生，尚未完成 A60 dtsi/dtbo 差异适配。
 
 当前还没有开始完整 Lineage 源码环境内的 `lunch` / `mka bootimage` / `mka recoveryimage` 构建验证。
 
 下一步重点：
 
-- 先按 TGY `A6060ZHU3CXE1` 做完设备树和 vendor blobs 主线。
-- 暂缓 CHC/TGY 差异对比，不让 CHC 阻塞当前 TGY bring-up。
-- 将 `patches/sm6150-common-a60q-proprietary-files.patch` 落到真正的 `device/samsung/sm6150-common` 仓库或 A60 专用 common 分支。
-- 将轻量 workspace 中生成的 `vendor/samsung/a60q` 独立成 vendor 仓库。
-- 将轻量 workspace 中生成的 `vendor/samsung/sm6150-common` 与 common vendor 仓库对齐。
-- 准备 `a60q_defconfig` / 内核差异对照，然后开始 `bootimage` 和 `recoveryimage` 构建。
+- 继续做 A60 kernel 真适配：从 stock kernel/dtbo/TWRP prebuilt 反查 panel、touch、fingerprint、camera、battery/charger 差异。
+- 决定 A60 与 common 同名音频 XML 的覆盖策略。
+- 在准备好内核差异后，再进入完整 Lineage 源码环境执行 `lunch` / `mka bootimage` / `mka recoveryimage`。
+- TGY 主线完成后，再回头做 CHC/TGY 差异复核。
 
 ## 基本原则
 
@@ -68,9 +68,35 @@
 - 第一阶段目标是能被 lunch 识别、能编译、能产出 boot/recovery，并开始基础启动验证。
 - 如果 A60 stock vendor blobs 和 `lineage-22.2` 兼容性成为硬阻塞，再对比 `lineage-21`，决定是否临时降到 LineageOS 21。
 
-## 基础仓库
+## 云端仓库状态
 
-主要使用这些仓库：
+当前已上传并核验的 `lineage-22.2` 仓库：
+
+| 仓库 | 用途 | 已核验提交 |
+| --- | --- | --- |
+| `GalileoLion/device_samsung_a60q` | A60 设备树 | `74c1416d62e5ec05503dcc9f63e42803ad35b2bb` |
+| `GalileoLion/android_device_samsung_sm6150-common` | A60 化 SM6150 common device tree | `19552849da5ce4282156083add020577c73f5955` |
+| `GalileoLion/android_kernel_samsung_sm6150` | 初始 SM6150 kernel，含 `a60q_defconfig` | `2c66b7e4838fd5ed6760540da24666eec7e16726` |
+| `GalileoLion/proprietary_vendor_samsung_a60q` | A60 单设备 vendor blobs | `b1120added02146f2dd4e70d695c7c6d57136546` |
+| `GalileoLion/proprietary_vendor_samsung_sm6150-common` | A60 化 SM6150 common vendor blobs | `9317c3805edac47e95ff34b4a9260dbac6343b60` |
+
+当前 `lineage.dependencies` 已声明：
+
+```text
+device/samsung/sm6150-common
+kernel/samsung/sm6150
+vendor/samsung/a60q
+vendor/samsung/sm6150-common
+```
+
+注意：
+
+- kernel 仓库为单提交导入版本，用于保证云端依赖完整；后续如果需要保留 A70 上游历史，可以另行重建带完整历史的分支。
+- 当前云端依赖已经足够让源码树按仓库名拉取完整设备树/依赖文件，但还没有经过完整 Lineage 构建验证。
+
+## 基础来源
+
+主要参考这些上游仓库：
 
 - `a70q-lineage/android_device_samsung_a70q`
   - 用作 A60 单设备树的结构模板。
@@ -401,9 +427,7 @@ CHC 仍未提取：
 
 尚未完成：
 
-- 还没有把生成的 `vendor/samsung/a60q` 发布为独立 vendor 仓库。
-- 还没有把 A60 化 common proprietary list 补丁合入 `device/samsung/sm6150-common`。
-- 还没有把生成的 `vendor/samsung/sm6150-common` 与 common vendor 仓库对齐。
+- 还没有完成 A60 kernel 的真实硬件差异适配；当前 `a60q_defconfig` 只是初始占位。
 - 还没有决定同名但与 common 有差异的音频 XML 是否需要设备侧覆盖。
 - 还没有开始 `bootimage` / `recoveryimage` 构建验证。
 
@@ -425,6 +449,7 @@ lineage_workspace/
 - `prebuilts/`：只放了 `extract-utils` 本次需要的 `patchelf` / `llvm-objdump` / `llvm-strip` 本机工具符号链接，不是完整 Lineage prebuilts。
 - `vendor/samsung/a60q`：已从 TGY source 成功生成，50 个 blobs。
 - `vendor/samsung/sm6150-common`：已在本地 A60 化 common 清单后成功生成，782 个 blobs。
+- `/tmp/a60q_kernel_import`：kernel 单提交导入仓库，已推送到 `GalileoLion/android_kernel_samsung_sm6150`。
 
 TGY source 目录：
 
@@ -457,6 +482,7 @@ lineage_workspace/device/samsung/a60q
 
 - A60 单设备 vendor 抽取成功。
 - SM6150 common vendor 在套用 `patches/sm6150-common-a60q-proprietary-files.patch` 后抽取成功。
+- A60 单设备 vendor、SM6150 common vendor、SM6150 common device 和 kernel 均已上传到 GitHub。
 
 ### TGY proprietary list 覆盖检查
 
@@ -838,17 +864,23 @@ $(call inherit-product, device/samsung/sm6150-common/sm6150.mk)
 
 ### 内核和 DTBO
 
-初始源码：
+当前云端源码：
 
 ```text
 kernel/samsung/sm6150
 ```
 
-需要创建或派生：
+已创建：
 
 ```text
 arch/arm64/configs/a60q_defconfig
 ```
+
+当前状态：
+
+- `a60q_defconfig` 已存在于 `GalileoLion/android_kernel_samsung_sm6150` 的 `lineage-22.2` 分支。
+- 该 defconfig 目前从 `a70q_defconfig` 机械派生，只用于让设备树依赖可解析。
+- kernel 仓库为单提交导入版本，后续如需保留 A70 上游历史，可以重建带历史分支。
 
 必须确认 A60 差异：
 
@@ -890,10 +922,11 @@ TWRP 里的 prebuilt `Image.gz-dtb` 和 `dtbo.img` 可用于对比。
 
 继续按 TGY 路线推进：
 
-- 将 `patches/sm6150-common-a60q-proprietary-files.patch` 应用到真正使用的 `device/samsung/sm6150-common` 仓库或 A60 专用 common 分支。
-- 将 `lineage_workspace/vendor/samsung/a60q` 独立成 `proprietary_vendor_samsung_a60q` 仓库。
-- 将 `lineage_workspace/vendor/samsung/sm6150-common` 与 common vendor 仓库对齐。
-- 放进完整 Lineage 源码树后执行 `lunch lineage_a60q-userdebug`、`mka bootimage`、`mka recoveryimage`。
+- 对比 A60 stock kernel/dtbo、TWRP prebuilt 和当前 kernel tree，补 A60 panel/touch/fingerprint/camera/battery/charger 相关 dtsi/defconfig 差异。
+- 处理 A60 stock 与 common 同名音频 XML 差异，决定是否做设备侧覆盖。
+- 在完整 Lineage 源码树中拉取当前五个 `GalileoLion/*` 仓库后，执行 `lunch lineage_a60q-userdebug`。
+- 首轮构建目标仍然是 `mka bootimage` 和 `mka recoveryimage`，暂不直接追求整包。
+- TGY 构建路径跑通后，再回头用 CHC 固件做底层差异复核。
 
 每个设备专有值都需要和以下来源交叉核对：
 

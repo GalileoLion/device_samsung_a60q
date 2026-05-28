@@ -1,4 +1,4 @@
-进度：A√选择 `lineage-22.2` 基线 -> B√建立 A60 设备树骨架 -> C√对照 TWRP 冲突点 -> D√上传设备树分支 -> E√提取 TGY stock 固件信息 -> F√完善 fstab/分区/BoardConfig -> G√抽取 vendor blobs -> H√上传完整依赖仓库 -> I 内核真适配 -> J 构建 boot/recovery -> K 首次启动与日志修复
+进度：A√选择 `lineage-22.2` 基线 -> B√建立 A60 设备树骨架 -> C√对照 TWRP 冲突点 -> D√上传设备树分支 -> E√提取 TGY stock 固件信息 -> F√完善 fstab/分区/BoardConfig -> G√抽取 vendor blobs -> H√上传完整依赖仓库 -> I√内核真适配第一轮 -> J 构建 boot/recovery -> K 首次启动与日志修复
 
 # 三星 Galaxy A60 设备树开发计划
 
@@ -33,15 +33,21 @@
 - 已用本地 A60 化 common 清单成功抽取 `vendor/samsung/sm6150-common`，782 个 blobs。
 - 已生成 `patches/sm6150-common-a60q-proprietary-files.patch`，记录 A60 需要落到 common 仓库的 proprietary list 调整。
 - 已将当前设备树和所需依赖仓库上传到 GitHub，并核验远端 `lineage-22.2` 分支存在。
-- 已在 kernel 仓库中加入初始 `a60q_defconfig`；当前只是从 A70 defconfig 机械派生，尚未完成 A60 dtsi/dtbo 差异适配。
+- 已完成 kernel 真适配第一轮：从 TGY stock `dtbo.img` 拆出 8 个 A60Q dtbo entry，并作为 `sm6150-sec-a60q-chn-overlay-r00/r01/r02/r03/r04/r05/r06/r08.dts` 加入 kernel。
+- 已在 kernel 中补齐 `CONFIG_SEC_A60Q_PROJECT` / `CONFIG_SEC_A60Q_CHN_PROJECT`，并让 `a60q_defconfig` 选择 A60 CHN/HK 项目而不是 A70 EUR 项目。
+- 已更新 kernel DTS Makefile，让 A60 编译路径生成 A60Q stock overlay。
+- 已验证 8 个 A60 overlay 的 board-id 顺序：`00/01/02/03/04/05/06/08`，与 TGY stock dtbo 对应。
+- 已用 `dtc` 单独编译 8 个 A60 overlay，未发现 DTS 语法错误。
+- 已成功执行 `make O=/tmp/a60q_kernel_out ARCH=arm64 a60q_defconfig`，生成配置确认选中 A60、关闭 A70。
+- 已尝试执行 `make O=/tmp/a60q_kernel_out ARCH=arm64 dtbs`，但当前轻量工作区没有 Android kernel 所需的合适 Clang/交叉工具链，停在 compiler check；这一步需要完整 Lineage/Android kernel build 环境后再做。
 
 当前还没有开始完整 Lineage 源码环境内的 `lunch` / `mka bootimage` / `mka recoveryimage` 构建验证。
 
 下一步重点：
 
-- 继续做 A60 kernel 真适配：从 stock kernel/dtbo/TWRP prebuilt 反查 panel、touch、fingerprint、camera、battery/charger 差异。
-- 决定 A60 与 common 同名音频 XML 的覆盖策略。
-- 在准备好内核差异后，再进入完整 Lineage 源码环境执行 `lunch` / `mka bootimage` / `mka recoveryimage`。
+- 准备进入完整 Lineage 源码环境，执行 `lunch` / `mka bootimage` / `mka recoveryimage`，验证当前设备树、vendor blobs 和 kernel dtbo 路径能否实际构建。
+- 如果构建失败，优先处理 kernel toolchain、dtbo 编译、device makefile 继承和 vendor blob 引用问题。
+- 构建验证前后继续复核 A60 与 common 同名音频 XML 的覆盖策略。
 - TGY 主线完成后，再回头做 CHC/TGY 差异复核。
 
 ## 基本原则
@@ -74,9 +80,9 @@
 
 | 仓库 | 用途 | 已核验提交 |
 | --- | --- | --- |
-| `GalileoLion/device_samsung_a60q` | A60 设备树 | `74c1416d62e5ec05503dcc9f63e42803ad35b2bb` |
+| `GalileoLion/device_samsung_a60q` | A60 设备树 | 当前 `lineage-22.2` HEAD |
 | `GalileoLion/android_device_samsung_sm6150-common` | A60 化 SM6150 common device tree | `19552849da5ce4282156083add020577c73f5955` |
-| `GalileoLion/android_kernel_samsung_sm6150` | 初始 SM6150 kernel，含 `a60q_defconfig` | `2c66b7e4838fd5ed6760540da24666eec7e16726` |
+| `GalileoLion/android_kernel_samsung_sm6150` | 初始 SM6150 kernel，含 A60Q defconfig 和 TGY stock dtbo overlays | `84c2126703bda903a46e4bda15acaa89de68c495` |
 | `GalileoLion/proprietary_vendor_samsung_a60q` | A60 单设备 vendor blobs | `b1120added02146f2dd4e70d695c7c6d57136546` |
 | `GalileoLion/proprietary_vendor_samsung_sm6150-common` | A60 化 SM6150 common vendor blobs | `9317c3805edac47e95ff34b4a9260dbac6343b60` |
 
